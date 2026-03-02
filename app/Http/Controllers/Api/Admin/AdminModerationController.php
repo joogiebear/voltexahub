@@ -105,4 +105,44 @@ class AdminModerationController extends Controller
             'message' => 'Post permanently deleted.',
         ]);
     }
+
+    public function deleteThread(int $id): JsonResponse
+    {
+        $thread = Thread::findOrFail($id);
+        $forum = $thread->forum;
+
+        $postCount = $thread->posts()->count();
+        $thread->posts()->forceDelete();
+        $thread->delete();
+
+        $forum->decrement('thread_count');
+        $forum->decrement('post_count', $postCount);
+
+        return response()->json([
+            'message' => 'Thread deleted.',
+        ]);
+    }
+
+    public function moveThread(Request $request, int $id): JsonResponse
+    {
+        $thread = Thread::findOrFail($id);
+        $validated = $request->validate(['forum_id' => ['required', 'exists:forums,id']]);
+
+        $oldForum = $thread->forum;
+        $postCount = $thread->posts()->count();
+
+        $thread->update(['forum_id' => $validated['forum_id']]);
+
+        $oldForum->decrement('thread_count');
+        $oldForum->decrement('post_count', $postCount);
+
+        $newForum = $thread->fresh()->forum;
+        $newForum->increment('thread_count');
+        $newForum->increment('post_count', $postCount);
+
+        return response()->json([
+            'message' => 'Thread moved successfully.',
+            'data' => $thread->fresh()->load('forum:id,name,slug'),
+        ]);
+    }
 }

@@ -137,6 +137,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::put('/threads/{id}/lock', [AdminModerationController::class, 'lockThread']);
     Route::put('/threads/{id}/solve', [AdminModerationController::class, 'solveThread']);
     Route::delete('/posts/{id}', [AdminModerationController::class, 'deletePost']);
+    Route::delete('/threads/{id}', [AdminModerationController::class, 'deleteThread']);
+    Route::put('/threads/{id}/move', [AdminModerationController::class, 'moveThread']);
 
     // Store
     Route::get('/store/items', [AdminStoreController::class, 'index']);
