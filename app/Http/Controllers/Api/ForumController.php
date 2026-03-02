@@ -16,7 +16,7 @@ class ForumController extends Controller
                 ->with([
                     'forums' => fn ($q) => $q->where('is_active', true)
                         ->orderBy('display_order')
-                        ->withCount(['threads', 'posts'])
+                        ->withCount('threads')
                         ->with('lastPostUser:id,username,avatar_color'),
                 ]),
         ])
