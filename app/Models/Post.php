@@ -13,13 +13,24 @@ class Post extends Model
 
     protected $fillable = [
         'thread_id', 'user_id', 'body', 'is_first_post', 'reaction_count',
+        'edited_at', 'edit_count',
     ];
+
+    protected $appends = ['is_edited'];
 
     protected function casts(): array
     {
         return [
             'is_first_post' => 'boolean',
+            'edited_at' => 'datetime',
         ];
+    }
+
+    protected function isEdited(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::get(
+            fn () => $this->edited_at !== null
+        );
     }
 
     public function thread(): BelongsTo

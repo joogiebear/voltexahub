@@ -215,6 +215,19 @@ class UserController extends Controller
         ]);
     }
 
+    public function online(): JsonResponse
+    {
+        $users = User::where('last_seen', '>=', now()->subMinutes(5))
+            ->select('id', 'username', 'avatar_path')
+            ->orderByDesc('last_seen')
+            ->get();
+
+        return response()->json([
+            'data' => $users,
+            'count' => $users->count(),
+        ]);
+    }
+
     public function sessions(Request $request): JsonResponse
     {
         $sessions = $request->user()->sessions()

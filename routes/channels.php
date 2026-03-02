@@ -7,5 +7,5 @@ Broadcast::channel('user.{userId}', function ($user, $userId) {
 });
 
 Broadcast::channel('online', function ($user) {
-    return ['id' => $user->id, 'username' => $user->username];
+    return ['id' => $user->id, 'username' => $user->username, 'avatar_url' => $user->avatar_url];
 });

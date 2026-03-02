@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Admin\AdminModerationController;
 use App\Http\Controllers\Api\Admin\AdminStoreController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ConversationController;
@@ -34,7 +35,9 @@ Route::get('/threads/{id}', [ThreadController::class, 'show']);
 Route::get('/threads/{id}/posts', [PostController::class, 'index']);
 Route::get('/store/items', [StoreController::class, 'index']);
 Route::get('/achievements', [AchievementController::class, 'index']);
+Route::get('/users/online', [UserController::class, 'online']);
 Route::get('/users/{username}/profile', [UserController::class, 'profile']);
+Route::get('/search', [SearchController::class, 'search']);
 
 // Auth routes
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -74,7 +77,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/threads', [ThreadController::class, 'store']);
     Route::post('/threads/{id}/posts', [PostController::class, 'store']);
     Route::post('/posts/{id}/react', [PostController::class, 'react']);
+    Route::put('/posts/{id}', [PostController::class, 'update']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+    Route::put('/threads/{id}', [ThreadController::class, 'update']);
 
     // Store
     Route::post('/store/purchase', [StoreController::class, 'purchaseWithCredits']);

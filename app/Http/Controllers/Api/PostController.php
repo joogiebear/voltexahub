@@ -128,6 +128,39 @@ class PostController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, int $postId): JsonResponse
+    {
+        $post = Post::findOrFail($postId);
+        $user = $request->user();
+
+        if ($post->user_id !== $user->id && ! $user->hasRole(['admin', 'moderator'])) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'min:3'],
+        ]);
+
+        $post->update([
+            'body' => $validated['body'],
+            'edited_at' => now(),
+            'edit_count' => $post->edit_count + 1,
+        ]);
+
+        return response()->json([
+            'data' => $post->fresh()->load([
+                'user' => fn ($q) => $q->select(
+                    'id', 'username', 'avatar_color', 'user_title',
+                    'post_count', 'credits', 'created_at'
+                ),
+                'user.roles',
+            ]),
+            'message' => 'Post updated successfully.',
+        ]);
+    }
+
     public function react(Request $request, int $postId): JsonResponse
     {
         $post = Post::findOrFail($postId);

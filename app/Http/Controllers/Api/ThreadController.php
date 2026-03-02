@@ -54,6 +54,44 @@ class ThreadController extends Controller
         ]);
     }
 
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $thread = Thread::findOrFail($id);
+        $user = $request->user();
+
+        if ($thread->user_id !== $user->id && ! $user->hasRole('admin')) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'min:3', 'max:255'],
+            'body' => ['nullable', 'string', 'min:3'],
+        ]);
+
+        $thread->update([
+            'title' => $validated['title'],
+        ]);
+
+        if (! empty($validated['body'])) {
+            $firstPost = $thread->posts()->where('is_first_post', true)->first();
+            if ($firstPost) {
+                $firstPost->update([
+                    'body' => $validated['body'],
+                    'edited_at' => now(),
+                    'edit_count' => $firstPost->edit_count + 1,
+                ]);
+            }
+            $thread->update(['body' => $validated['body']]);
+        }
+
+        return response()->json([
+            'data' => $thread->fresh()->load('user'),
+            'message' => 'Thread updated successfully.',
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
