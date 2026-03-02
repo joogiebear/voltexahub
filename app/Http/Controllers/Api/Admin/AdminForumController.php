@@ -56,7 +56,7 @@ class AdminForumController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['sometimes', 'string', 'max:255', 'unique:games,slug,' . $id],
+            'slug' => ['sometimes', 'nullable', 'string', 'max:255', 'unique:games,slug,' . $id],
             'icon' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'display_order' => ['nullable', 'integer'],
@@ -110,7 +110,7 @@ class AdminForumController extends Controller
         $validated = $request->validate([
             'game_id' => ['sometimes', 'exists:games,id'],
             'name' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['sometimes', 'string', 'max:255', 'unique:categories,slug,' . $id],
+            'slug' => ['sometimes', 'nullable', 'string', 'max:255', 'unique:categories,slug,' . $id],
             'description' => ['nullable', 'string'],
             'display_order' => ['nullable', 'integer'],
             'is_active' => ['nullable', 'boolean'],
@@ -165,12 +165,17 @@ class AdminForumController extends Controller
         $validated = $request->validate([
             'category_id' => ['sometimes', 'exists:categories,id'],
             'name' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['sometimes', 'string', 'max:255', 'unique:forums,slug,' . $id],
+            'slug' => ['sometimes', 'nullable', 'string', 'max:255', 'unique:forums,slug,' . $id],
             'description' => ['nullable', 'string'],
             'icon' => ['nullable', 'string', 'max:255'],
             'display_order' => ['nullable', 'integer'],
             'is_active' => ['nullable', 'boolean'],
         ]);
+
+        // If slug sent but empty, regenerate from name
+        if (array_key_exists("slug", $validated) && empty($validated["slug"])) {
+            $validated["slug"] = Str::slug($validated["name"] ?? $forum->name);
+        }
 
         $forum->update($validated);
 
