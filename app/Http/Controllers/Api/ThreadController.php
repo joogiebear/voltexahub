@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Forum;
 use App\Models\ForumConfig;
 use App\Models\Thread;
+use App\Models\ThreadLike;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -45,7 +46,10 @@ class ThreadController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $thread = Thread::with(['user', 'forum.category', 'lastReplyUser'])
+        $thread = Thread::with([
+                'user', 'forum.category', 'lastReplyUser',
+                'likes.user:id,username,avatar_color,avatar_path',
+            ])
             ->findOrFail($id);
 
         $thread->increment('view_count');
@@ -153,5 +157,42 @@ class ThreadController extends Controller
             'data' => $thread->load('user'),
             'message' => 'Thread created successfully.',
         ], 201);
+    }
+
+    public function like(Request $request, int $id): JsonResponse
+    {
+        $thread = Thread::findOrFail($id);
+        $user = $request->user();
+
+        $existing = ThreadLike::where('user_id', $user->id)
+            ->where('thread_id', $thread->id)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            $liked = false;
+        } else {
+            ThreadLike::create([
+                'user_id' => $user->id,
+                'thread_id' => $thread->id,
+            ]);
+            $liked = true;
+        }
+
+        $likers = $thread->likes()
+            ->with('user:id,username,avatar_path')
+            ->get()
+            ->pluck('user')
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'username' => $u->username,
+                'avatar_url' => $u->avatar_url,
+            ]);
+
+        return response()->json([
+            'liked' => $liked,
+            'likes_count' => $thread->likes()->count(),
+            'likers' => $likers,
+        ]);
     }
 }

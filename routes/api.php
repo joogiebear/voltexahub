@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AchievementController;
 use App\Http\Controllers\Api\Admin\AdminAchievementController;
 use App\Http\Controllers\Api\Admin\AdminAwardController;
 use App\Http\Controllers\Api\Admin\AdminConfigController;
+use App\Http\Controllers\Api\Admin\AdminGroupController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminForumController;
 use App\Http\Controllers\Api\Admin\AdminModerationController;
@@ -82,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/posts/{id}', [PostController::class, 'update']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
     Route::put('/threads/{id}', [ThreadController::class, 'update']);
+    Route::post('/threads/{id}/like', [ThreadController::class, 'like']);
 
     // Store
     Route::post('/store/purchase', [StoreController::class, 'purchaseWithCredits']);
@@ -161,6 +163,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/awards', [AdminAwardController::class, 'store']);
     Route::put('/awards/{id}', [AdminAwardController::class, 'update']);
     Route::delete('/awards/{id}', [AdminAwardController::class, 'destroy']);
+
+    // Groups
+    Route::get('/groups', [AdminGroupController::class, 'index']);
+    Route::post('/groups', [AdminGroupController::class, 'store']);
+    Route::put('/groups/{id}', [AdminGroupController::class, 'update']);
+    Route::delete('/groups/{id}', [AdminGroupController::class, 'destroy']);
 
     // Config
     Route::get('/config', [AdminConfigController::class, 'index']);

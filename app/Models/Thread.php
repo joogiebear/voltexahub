@@ -14,7 +14,7 @@ class Thread extends Model
         'last_reply_at', 'last_reply_user_id',
     ];
 
-    protected $appends = ['author'];
+    protected $appends = ['author', 'likes_count'];
 
     protected function casts(): array
     {
@@ -54,5 +54,15 @@ class Thread extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
+    }
+
+    public function likes(): HasMany
+    {
+        return $this->hasMany(ThreadLike::class);
+    }
+
+    public function getLikesCountAttribute(): int
+    {
+        return $this->likes()->count();
     }
 }
