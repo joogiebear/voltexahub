@@ -55,12 +55,13 @@ class ThreadController extends Controller
         ]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
         $thread = Thread::with([
                 'user', 'user.roles', 'forum.category', 'forum.parentForum', 'lastReplyUser', 'lastReplyUser.roles',
             ])
-            ->findOrFail($id);
+            ->where(is_numeric($id) ? 'id' : 'slug', $id)
+            ->firstOrFail();
 
         $thread->increment('view_count');
 
