@@ -26,7 +26,7 @@ class PostController extends Controller
         $posts = $thread->posts()
             ->with([
                 'user' => fn ($q) => $q->select(
-                    'id', 'username', 'avatar_color', 'avatar_path', 'user_title',
+                    'id', 'username', 'avatar_color', 'avatar_path', 'postbit_bg', 'user_title',
                     'post_count', 'credits', 'created_at'
                 ),
                 'user.roles',

@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\ForumController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PublicConfigController;
+use App\Http\Controllers\Api\PostbitBgController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StoreController;
@@ -86,6 +87,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/sessions', [UserController::class, 'sessions']);
     Route::delete('/user/sessions/{id}', [UserController::class, 'destroySession']);
     Route::post('/user/avatar', [AvatarController::class, 'store']);
+    Route::post('/user/postbit-bg', [PostbitBgController::class, 'upload']);
+    Route::delete('/user/postbit-bg', [PostbitBgController::class, 'remove']);
 
     // Forum actions
     Route::post('/threads', [ThreadController::class, 'store']);
