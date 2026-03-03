@@ -4,7 +4,7 @@
 # Supports: Ubuntu 20.04/22.04/24.04, Debian 11/12
 # Run: chmod +x install.sh && sudo ./install.sh
 # ============================================================================
-set -e
+# Errors handled explicitly per section
 
 # ---------------------------------------------------------------------------
 # Colors & helpers
@@ -188,6 +188,9 @@ header 'Installing System Dependencies'
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
+
+# Ensure essential tools are present
+apt-get install -y -qq curl git rsync unzip >/dev/null
 
 # Determine PHP FPM service name for later
 PHP_FPM_VER=""
@@ -405,24 +408,23 @@ success '.env configured'
 header 'Installing Dependencies'
 
 info 'Installing PHP dependencies...'
-sudo -u www-data composer install --no-dev --optimize-autoloader --working-dir="$INSTALL_DIR" --quiet 2>&1
+HOME=/root COMPOSER_HOME=/root/.composer composer install --no-dev --optimize-autoloader --working-dir="$INSTALL_DIR" --no-interaction --quiet 2>&1 || { echo 'Composer install failed. Check logs.'; exit 1; }
 success 'PHP dependencies installed'
 
 info 'Generating app key...'
-php artisan key:generate --force
+php artisan key:generate --force || { echo 'key:generate failed'; exit 1; }
 success 'App key generated'
 
 info 'Running migrations...'
-php artisan migrate --force
+php artisan migrate --force || { echo 'Migrations failed — check DB credentials and .env'; exit 1; }
 success 'Database migrations complete'
 
 info 'Running default seeders...'
-php artisan db:seed --class=DefaultContentSeeder --force 2>/dev/null || warn 'DefaultContentSeeder skipped'
-php artisan db:seed --class=RoleSeeder --force 2>/dev/null || warn 'RoleSeeder skipped'
-success 'Seeders complete'
+php artisan db:seed --class=DefaultContentSeeder --force 2>/dev/null && success 'DefaultContentSeeder done' || warn 'DefaultContentSeeder skipped'
+php artisan db:seed --class=RoleSeeder --force 2>/dev/null && success 'RoleSeeder done' || warn 'RoleSeeder skipped'
 
 info 'Linking storage...'
-php artisan storage:link --force 2>/dev/null || php artisan storage:link
+php artisan storage:link --force 2>/dev/null || php artisan storage:link 2>/dev/null || true
 success 'Storage linked'
 
 # Clone and build frontend
@@ -436,7 +438,7 @@ fi
 if [ -d "$FRONTEND_DIR" ]; then
   info 'Building frontend...'
   cd "$FRONTEND_DIR"
-  npm install --silent 2>/dev/null
+  npm install 2>&1 | tail -3
   # Write Vite env — use relative /api since Nginx proxies it
   cat > .env.production << VITEENV
 VITE_API_URL=/api
@@ -445,8 +447,12 @@ VITE_PUSHER_HOST=$DOMAIN
 VITE_PUSHER_PORT=6001
 VITE_PUSHER_SCHEME=https
 VITEENV
-  npm run build --silent 2>/dev/null
-  success 'Frontend built'
+  npm run build 2>&1 | tail -5
+  if [ -d dist ]; then
+    success 'Frontend built'
+  else
+    warn 'Frontend build may have failed — check output above'
+  fi
   cd "$INSTALL_DIR"
 else
   warn "Could not clone frontend — Nginx will fallback to Laravel public dir"
@@ -487,6 +493,9 @@ App\\Models\\ForumConfig::set('forum_url', '$SITE_URL');
 "
 success 'Forum config saved'
 
+# Fix ownership after running artisan as root
+chown -R www-data:www-data "$INSTALL_DIR/storage" "$INSTALL_DIR/bootstrap/cache"
+
 # ---------------------------------------------------------------------------
 # Section 9: Nginx config
 # ---------------------------------------------------------------------------
@@ -515,6 +524,16 @@ server {
 
     # API proxy to Laravel via PHP-FPM
     location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # Stripe webhook
+    location /stripe/ {
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
