@@ -106,33 +106,44 @@ class StoreController extends Controller
             ], 422);
         }
 
-        // Create Stripe PaymentIntent
+        $user = $request->user();
         $stripe = new StripeClient(config('services.stripe.secret'));
+        $frontendUrl = config('app.frontend_url', 'https://community.voltexahub.com');
 
-        $intent = $stripe->paymentIntents->create([
-            'amount' => (int) ($item->price_money * 100),
-            'currency' => 'usd',
+        $session = $stripe->checkout->sessions->create([
+            'payment_method_types' => ['card'],
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => 'usd',
+                    'product_data' => [
+                        'name' => $item->name,
+                        'description' => $item->description ?? '',
+                    ],
+                    'unit_amount' => (int) ($item->price_money * 100),
+                ],
+                'quantity' => 1,
+            ]],
+            'mode' => 'payment',
+            'success_url' => $frontendUrl . '/store/success?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => $frontendUrl . '/store/cancel',
             'metadata' => [
-                'user_id' => $request->user()->id,
+                'user_id' => $user->id,
                 'item_id' => $item->id,
             ],
+            'customer_email' => $user->email,
         ]);
 
         $purchase = StorePurchase::create([
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'store_item_id' => $item->id,
             'payment_method' => 'money',
             'amount_paid' => $item->price_money,
             'status' => 'pending',
-            'stripe_payment_intent' => $intent->id,
+            'stripe_payment_intent' => $session->id,
         ]);
 
         return response()->json([
-            'data' => [
-                'purchase_id' => $purchase->id,
-                'client_secret' => $intent->client_secret,
-                'amount' => $item->price_money,
-            ],
+            'data' => ['url' => $session->url],
             'message' => 'Checkout session created.',
         ]);
     }

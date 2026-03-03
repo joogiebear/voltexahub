@@ -12,6 +12,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Events\NewNotification;
 use App\Notifications\AchievementUnlockedNotification;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
@@ -92,6 +93,16 @@ class User extends Authenticatable implements MustVerifyEmail
             if (!$role) return null;
             return ForumConfig::get("group_label_{$role}", ucfirst($role));
         });
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $frontendUrl = config('app.frontend_url', 'https://community.voltexahub.com');
+        $url = $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($this->getEmailForPasswordReset());
+
+        ResetPassword::createUrlUsing(fn () => $url);
+
+        $this->notify(new ResetPassword($token));
     }
 
     public function threads(): HasMany

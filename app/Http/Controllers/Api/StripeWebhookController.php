@@ -34,12 +34,47 @@ class StripeWebhookController extends Controller
         }
 
         match ($event->type) {
+            'checkout.session.completed' => $this->handleCheckoutSessionCompleted($event->data->object),
             'payment_intent.succeeded' => $this->handlePaymentSucceeded($event->data->object),
             'payment_intent.payment_failed' => $this->handlePaymentFailed($event->data->object),
             default => Log::info("Unhandled Stripe event: {$event->type}"),
         };
 
         return response()->json(['message' => 'Webhook handled']);
+    }
+
+    private function handleCheckoutSessionCompleted(object $session): void
+    {
+        $purchase = StorePurchase::where('stripe_payment_intent', $session->id)->first();
+
+        if (! $purchase) {
+            Log::warning("Stripe webhook: no purchase found for checkout session {$session->id}");
+            return;
+        }
+
+        if ($purchase->status !== 'pending') {
+            Log::info("Stripe webhook: purchase #{$purchase->id} already processed (status: {$purchase->status})");
+            return;
+        }
+
+        $purchase->update([
+            'status' => 'completed',
+            'delivered_at' => now(),
+        ]);
+
+        dispatch(new DeliverPurchase($purchase));
+
+        $purchase->load(['user', 'storeItem']);
+        Mail::to($purchase->user)->send(new PurchaseConfirmation($purchase));
+        $purchase->user->notify(new PurchaseConfirmedNotification($purchase));
+        broadcast(new NewNotification($purchase->user->id, [
+            'type' => 'purchase_confirmed',
+            'title' => 'Purchase confirmed',
+            'body' => 'Your purchase of "' . $purchase->storeItem->name . '" was successful',
+            'url' => '/store',
+        ]));
+
+        Log::info("Stripe checkout session completed for purchase #{$purchase->id}");
     }
 
     private function handlePaymentSucceeded(object $paymentIntent): void

@@ -51,6 +51,13 @@ class TextFormatterService
             $html = str_replace($key, $rendered, $html);
         }
 
+        // Render @mentions as profile links
+        $html = preg_replace(
+            '/@(\w+)/',
+            '<a href="/profile/$1" class="mention">@$1</a>',
+            $html
+        );
+
         return $html;
     }
 
