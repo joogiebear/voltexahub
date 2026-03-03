@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\AdminAwardController;
 use App\Http\Controllers\Api\Admin\AdminConfigController;
 use App\Http\Controllers\Api\Admin\AdminGroupController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
+use App\Http\Controllers\Api\Admin\AdminPluginController;
 use App\Http\Controllers\Api\Admin\AdminForumController;
 use App\Http\Controllers\Api\Admin\AdminForumPermissionController;
 use App\Http\Controllers\Api\Admin\AdminModerationController;
@@ -179,4 +180,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/config/test-email', [AdminConfigController::class, 'testEmail']);
     Route::get('/forums/{forum}/permissions', [AdminForumPermissionController::class, 'index']);
     Route::put('/forums/{forum}/permissions', [AdminForumPermissionController::class, 'update']);
+
+    // Plugins
+    Route::get('/plugins', [AdminPluginController::class, 'index']);
+    Route::post('/plugins/install', [AdminPluginController::class, 'install']);
+    Route::post('/plugins/{slug}/toggle', [AdminPluginController::class, 'toggle']);
+    Route::delete('/plugins/{slug}', [AdminPluginController::class, 'uninstall']);
 });

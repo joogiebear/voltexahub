@@ -2,12 +2,16 @@
 
 namespace App\Providers;
 
+use App\Services\PluginManager;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(PluginManager::class);
+    }
 
     public function boot(): void
     {
@@ -38,5 +42,8 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Throwable) {
             // DB may not be ready yet (first boot/migration) — skip silently
         }
+
+        // Boot all enabled plugins
+        app(PluginManager::class)->bootEnabled();
     }
 }
