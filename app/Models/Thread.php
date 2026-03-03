@@ -14,6 +14,8 @@ class Thread extends Model
         'last_reply_at', 'last_reply_user_id',
     ];
 
+    protected $appends = ['author'];
+
     protected function casts(): array
     {
         return [
