@@ -48,15 +48,20 @@ class ThreadController extends Controller
     {
         $thread = Thread::with([
                 'user', 'forum.category', 'lastReplyUser',
-                'likes.user:id,username,avatar_color,avatar_path',
             ])
             ->findOrFail($id);
 
         $thread->increment('view_count');
 
-        return response()->json([
-            'data' => $thread,
+        $threadData = $thread->toArray();
+        $threadData['likers'] = $thread->likes()->with('user:id,username,avatar_color,avatar_path')->get()->map(fn($l) => [
+            'id' => $l->user->id ?? $l->user_id,
+            'username' => $l->user->username ?? 'Unknown',
+            'avatar_url' => $l->user->avatar_url ?? null,
         ]);
+        $threadData['is_liked_by_me'] = auth()->check() ? $thread->likes()->where('user_id', auth()->id())->exists() : false;
+
+        return response()->json(['data' => $threadData]);
     }
 
     public function update(Request $request, int $id): JsonResponse

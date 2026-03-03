@@ -44,10 +44,60 @@ class UserController extends Controller
             ->take(5)
             ->get();
 
+        $isOnline = $user->last_seen && $user->last_seen->gte(now()->subMinutes(15));
+        $threadCount = $user->threads()->count();
+
         return response()->json([
-            'data' => [
-                'user' => $user,
-                'recent_posts' => $recentPosts,
+            "data" => [
+                "id" => $user->id,
+                "username" => $user->username,
+                "email" => $user->email,
+                "avatar_url" => $user->avatar_url,
+                "avatar_color" => $user->avatar_color,
+                "user_title" => $user->user_title,
+                "bio" => $user->bio,
+                "signature" => $user->signature,
+                "post_count" => $user->post_count,
+                "thread_count" => $threadCount,
+                "credits" => $user->credits,
+                "join_date" => $user->created_at?->toISOString(),
+                "last_seen" => $user->last_seen?->toISOString(),
+                "is_online" => $isOnline,
+                "roles" => $user->roles->map(fn($r) => [
+                    "name" => $r->name,
+                    "color" => \App\Models\ForumConfig::get("group_color_".$r->name, "#6b7280"),
+                    "label" => \App\Models\ForumConfig::get("group_label_".$r->name, ucfirst($r->name)),
+                ]),
+                "primary_role" => $user->roles->first() ? [
+                    "name" => $user->roles->first()->name,
+                    "color" => \App\Models\ForumConfig::get("group_color_".$user->roles->first()->name, "#6b7280"),
+                    "label" => \App\Models\ForumConfig::get("group_label_".$user->roles->first()->name, ucfirst($user->roles->first()->name)),
+                ] : null,
+                "awards" => $user->userAwards->map(fn($ua) => [
+                    "id" => $ua->id,
+                    "name" => $ua->award->name ?? "",
+                    "description" => $ua->award->description ?? "",
+                    "icon_url" => $ua->award->icon_url ?? null,
+                ]),
+                "achievements" => $user->userAchievements->map(fn($ua) => [
+                    "id" => $ua->id,
+                    "name" => $ua->achievement->name ?? "",
+                    "description" => $ua->achievement->description ?? "",
+                    "icon" => $ua->achievement->icon ?? "fa-solid fa-star",
+                    "unlocked" => true,
+                    "unlocked_at" => $ua->created_at?->toISOString(),
+                ]),
+                "recent_posts" => $recentPosts->map(fn($p) => [
+                    "id" => $p->id,
+                    "thread_id" => $p->thread_id,
+                    "thread_title" => $p->thread?->title,
+                    "excerpt" => \Illuminate\Support\Str::limit(strip_tags($p->body), 120),
+                    "created_at" => $p->created_at?->toISOString(),
+                ]),
+                "discord_username" => $user->discord_username ?? null,
+                "twitter_handle" => $user->twitter_handle ?? null,
+                "website_url" => $user->website_url ?? null,
+                "minecraft_ign" => $user->minecraft_ign ?? null,
             ],
         ]);
     }
