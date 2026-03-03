@@ -31,6 +31,12 @@ class ForumConfigSeeder extends Seeder
             'credits_daily_post_limit' => '50',
             'role_credit_multipliers' => '{"admin":1.0,"moderator":1.0,"member":1.0}',
 
+            // Logo
+            'logo_type'       => 'both',       // both | icon_only | text_only | image
+            'logo_icon'       => 'fa-solid fa-bolt',
+            'logo_icon_color' => '#7c3aed',
+            'logo_image'      => '',
+
             // Custom CSS/JS
             'custom_css' => '',
             'custom_js' => '',

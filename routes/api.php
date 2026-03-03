@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\AdminAchievementController;
 use App\Http\Controllers\Api\Admin\AdminAwardController;
 use App\Http\Controllers\Api\Admin\AdminConfigController;
 use App\Http\Controllers\Api\Admin\AdminContentController;
+use App\Http\Controllers\Api\Admin\AdminLogoController;
 use App\Http\Controllers\Api\Admin\AdminGroupController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminPluginController;
@@ -191,6 +192,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/config', [AdminConfigController::class, 'index']);
     Route::put('/config', [AdminConfigController::class, 'update']);
     Route::post('/config/test-email', [AdminConfigController::class, 'testEmail']);
+
+    // Logo
+    Route::post('/logo', [AdminLogoController::class, 'upload']);
+    Route::delete('/logo', [AdminLogoController::class, 'remove']);
     Route::get('/forums/{forum}/permissions', [AdminForumPermissionController::class, 'index']);
     Route::put('/forums/{forum}/permissions', [AdminForumPermissionController::class, 'update']);
 
