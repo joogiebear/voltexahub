@@ -31,7 +31,10 @@ class AdminUserController extends Controller
         $users = $query->latest()->paginate(20);
 
         return response()->json([
-            'data' => $users->items(),
+            'data' => collect($users->items())->map(fn ($u) => array_merge($u->toArray(), [
+                'role' => $u->roles->firstWhere(fn ($r) => $r->name !== 'banned')?->name ?? ($u->roles->first()?->name ?? 'member'),
+                'is_banned' => $u->roles->contains('name', 'banned'),
+            ]))->all(),
             'meta' => [
                 'current_page' => $users->currentPage(),
                 'last_page' => $users->lastPage(),
