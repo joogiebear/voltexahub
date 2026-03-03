@@ -1,12 +1,12 @@
 # VoltexaHub - Project Progress
 
 ## Overview
-Custom gaming community platform for VoltexaMC. Forum + Store + Admin panel.
+Custom forum platform. White-label, self-hostable. Live at https://community.voltexahub.com.
 Two repos: `voltexaforum` (Vue frontend) + `voltexahub` (Laravel backend).
 
 ## Stack
-- **Frontend:** Vue 3 + Vite + Tailwind CSS + Pinia + Vue Router + Axios + marked + vuedraggable
-- **Backend:** Laravel 12 + PHP 8.5 + SQLite (local) / MySQL (prod) + Sanctum + Spatie Permission + Stripe
+- **Frontend:** Vue 3 + Vite + Tailwind CSS v4 + Pinia + Vue Router + Axios + marked + vuedraggable
+- **Backend:** Laravel 12 + PHP 8.4 + SQLite (local) / MySQL (prod) + Sanctum + Spatie Permission + Stripe
 
 ## Local Dev
 ```bash
@@ -23,216 +23,240 @@ cd ~/Projects/voltexahub && php artisan queue:work --sleep=3 --tries=3
 bash ~/Projects/voltexaforum/scripts/soketi-start.sh
 ```
 
-## Test Account
-- Email: victor99@test.com
-- Password: Password123!
-- Role: admin (full access), User ID: 7
+## Production
+- **URL:** https://community.voltexahub.com
+- **VPS:** 187.124.80.32 (Ubuntu 24.04, PHP 8.4, MySQL, Nginx, Soketi)
+- **Deploy backend:** `cd /var/www/voltexahub && git fetch origin main && git reset --hard origin/main && cp /tmp/voltexahub_env_backup .env && php artisan migrate --force && php artisan config:clear && php artisan cache:clear && systemctl restart voltexahub-app`
+- **Deploy frontend:** `cd /var/www/voltexaforum && git fetch origin main && git reset --hard origin/main && npm run build && systemctl reload nginx`
+
+## Test Account (prod)
+- Username: voltexa / Email: joogiebear@protonmail.com
+- Role: admin (User ID: 1)
 
 ---
 
 ## What's Built ✅
 
-### Auth & Users
-- Sanctum token auth (stored in localStorage as `voltexahub_token`)
-- Register, Login, Logout
-- Password reset (frontend + backend: /forgot-password, /reset-password)
-- Avatar upload — POST /api/user/avatar, stored in public/storage/avatars/
-- Avatar Vue reactivity fixed via `setAvatarUrl()` store action (spread pattern)
-- Online tracking — `last_seen` column, `UpdateLastSeen` middleware (throttled 2min)
-- GET /api/users/online — list of recently active users
+### Infrastructure & Deployment
+- VPS fully configured: PHP 8.4, MySQL, Nginx, SSL (Let's Encrypt), Soketi
+- `install.sh` — 700-line full VPS installer
+- `php artisan voltexahub:install` — interactive install command
+- community.voltexahub.com — dedicated SSL cert, separate from root domain
+- voltexahub.com — coming soon page (~/Projects/voltexahub-marketing/index.html)
+- systemd services: voltexahub-app, voltexahub-queue, voltexahub-soketi
+- Forum config cached in localStorage (no flash on page refresh)
+- All pages consistent width: max-w-6xl
 
-### Forum — Public
-- GET /api/forums — full game tree (games → categories → forums), threads_count, last_post info
-- Thread list (GET /api/forums/{slug}/threads)
-- Thread view (GET /api/threads/{id}) with posts
-- Create thread (POST /api/threads) — accepts forum_slug OR forum_id
-- Create post/reply (POST /api/posts)
-- Edit post (PUT /api/posts/{id}) — author or mod, tracks edited_at + edit_count
-- Edit thread (PUT /api/threads/{id}) — author or admin (title + first post body)
-- Reactions (POST /api/posts/{id}/react) — awards credits to post author (not self)
-- @mention parsing — regex finds @username, sends MentionNotification + broadcasts
+### Auth & Users
+- Sanctum token auth (localStorage: `voltexahub_token`)
+- Register, Login, Logout
+- Password reset (forgot-password + reset-password, frontend + backend)
+- Avatar upload (POST /api/user/avatar, stored in public/storage/avatars/)
+- Online tracking — last_seen, UpdateLastSeen middleware (throttled 2min)
+- GET /api/users/online — recently active users
+
+### Forum
+- Full game → category → forum tree (public + admin)
+- Thread list, thread view, create thread, create reply
+- Edit post (author or mod), edit thread (author or admin)
+- Post reactions (credits awarded to author)
+- @mention parsing — sends MentionNotification + broadcasts
+- Thread likes — heart button + comma-separated username display
+- Thread pinning, locking, deletion, move (admin/mod toolbar)
+- Pinned thread visual divider
+- Forum icons: FA classes stored in DB
+- Per-forum permissions: can_view / can_post / can_reply per role (including guest)
+
+### Forum Permissions System
+- forum_permissions table (forum_id, role_name, can_view, can_post, can_reply)
+- Roles: guest, member, vip, elite, moderator, admin
+- Admin UI: shield button on each forum → matrix editor
+- Default: all allowed if no row exists
+
+### Usergroup System
+- Group colors + labels stored in ForumConfig (group_color_{role}, group_label_{role})
+- group_color + group_label computed on User model ($appends) — flows to all API responses
+- Usernames colored by group everywhere: postbit, thread list, home last-post, profile header, members page
+- Usergroup legend: horizontal row below forum index (toggleable)
+- Admin Groups page: create/edit/delete roles with color + label
+
+### Members & Staff Pages
+- /members — grid layout, sortable (newest/posts/credits/A-Z), searchable, paginated 24/page
+- /staff — grouped by role (admin, moderator) with group color accents + top border
+- Both use group_color for username display
 
 ### Search
-- GET /api/search?q=&type=all|threads|posts|users&page= — grouped paginated results
-- SearchController, SearchView.vue (tabbed, URL sync, term highlighting, skeletons)
-- Search bar in AppHeader (desktop center, Enter to search)
+- GET /api/search?q=&type=all|threads|posts|users&page=
+- SearchView.vue — tabbed, URL sync, term highlighting, skeletons
 
 ### Notifications
-- 6 notification types: ThreadReply, Mention, AwardReceived, AchievementUnlocked, PurchaseConfirmed, DMReceived
-- API: GET /api/notifications, PUT /api/notifications/{id}/read, PUT /api/notifications/read-all, DELETE /api/notifications/{id}
-- Bell icon in header with unread badge
-- Dropdown (recent 10, mark read on click)
-- Full notifications page (/notifications) with FA mark-read button
-- Wired into PostController, AdminUserController, StoreController, Stripe webhook
+- 6 types: ThreadReply, Mention, AwardReceived, AchievementUnlocked, PurchaseConfirmed, DMReceived
+- Bell icon with unread badge, dropdown (10 recent), full page (/notifications)
+- Mark as read (individual + all)
+- Admin bell wired to /notifications
 
 ### Private Messages
-- Conversations + messages + conversation_user tables
-- ConversationController: list/create/fetch/send/unread-count
-- MessagesView.vue — split-panel inbox + conversation
-- ComposeModal.vue — new conversation
+- conversations + messages + conversation_user tables
+- MessagesView.vue — split panel inbox + conversation
+- ComposeModal.vue
 - Envelope icon with unread badge in header
-- Routes: /messages, /messages/:id
 
 ### Real-time (Soketi)
-- `NewNotification` + `NewMessage` broadcast events
-- config/broadcasting.php with Pusher/Soketi env vars
-- routes/channels.php — private user channels + online presence channel
-- Laravel Echo wired in main.js, subscribes on login
-- Presence store (stores/presence.js) — online users widget on HomeView
-- Soketi config: app ID = voltexahub, key = voltexahub-key, secret = voltexahub-secret, port 6001
+- NewNotification + NewMessage broadcast events
+- Private user channels + online presence channel
+- Laravel Echo in main.js, auto-subscribes on login
+- Presence store (stores/presence.js) — online users widget
 
-### Markdown
-- MarkdownEditor.vue — toolbar (Bold/Italic/Code/CodeBlock/Link/Quote/UL/OL/HR), preview toggle, uses `marked`
-- MarkdownRenderer.vue — XSS-safe styled prose output
-- Reply box + NewThreadView use MarkdownEditor
+### Content Editor
+- MarkdownEditor.vue — toolbar (Bold/Italic/Code/CodeBlock/Link/Quote/UL/OL/HR), preview toggle
+- MarkdownRenderer.vue — XSS-safe styled output
+- BBCode support: planned (Option C — Markdown + BBCode side by side)
 
 ### Moderation
-- Thread actions (visible to mods): pin/unpin, lock/unlock, delete, move (forum picker)
-- Per-post mod actions: delete post, delete whole thread if first post
-- Backend: PUT /admin/threads/{id}/move, DELETE /admin/threads/{id}
+- Pin/unpin, lock/unlock, delete, move thread (mod toolbar in ThreadView)
+- Per-post mod actions: delete post / delete thread
 - Forum last_post_at + last_post_user_id recalculated after deletion
 
 ### Credits System
-- Credits log (credits_log table), GET /api/user/credits → `{ balance, log: [] }`
-- Credits awarded on: thread create, post reply, reaction received (not self), achievement unlock, purchase
-- Role-based multipliers stored as JSON in forum_config (key: role_credit_multipliers)
-- Config-driven amounts: credits_per_thread, credits_per_reply, credits_for_solved, credits_per_like, credits_per_like_given, credits_daily_post_limit
-- GET /api/credits/earning-info — public endpoint, returns ways_to_earn + role_multipliers
-- CreditsView.vue — balance, log with pagination, "How to Earn" guide cards, role bonus table
+- Credits log (credits_log table)
+- Earned on: thread, reply, reaction received, achievement, purchase
+- Role-based multipliers (JSON in forum_config)
+- Config-driven amounts (credits_per_thread, credits_per_reply, etc.)
+- GET /api/credits/earning-info (public)
+- CreditsView.vue — balance, log, "How to Earn" guide, role bonus table
 
 ### Store
-- Real money: PaymentIntent + Stripe webhook (payment_intent.succeeded/failed)
-- Credits purchases: direct balance deduct
-- RCON delivery: DeliveryService + DeliverPurchase queued job
-- Purchase confirmation email (queued)
+- Stripe PaymentIntents (real money)
+- Credits purchases (direct balance deduct)
+- RCON delivery (DeliveryService + queued job)
+- Purchase confirmation email
 
 ### Email System
-- WelcomeEmail, PurchaseConfirmation — use ForumConfig::get('forum_name') (white-label)
-- Welcome on register, purchase confirmation on payment
-- Log driver locally, real SMTP via .env MAIL_* vars
+- SMTP config stored in DB (ForumConfig) — applied at runtime via AppServiceProvider
+- No server restart needed to change email settings
+- Admin config panel: Email/SMTP section with Send Test button
+- Test email fires to logged-in admin's email, shows success/error inline
+- Emails: WelcomeEmail, PurchaseConfirmation, VerifyEmail, PasswordReset, MentionNotification
+- Hostinger SMTP: smtp.hostinger.com, port 465, SSL, from must match authenticated user
 
-### Admin Panel (42+ endpoints)
-- Dashboard — real stats + activity
-- User management — search, ban, credits adjust, award give
-- Forum tree — drag-to-reorder (vuedraggable), full edit (name/slug/icon/description/active), create/delete games/categories/forums
-- FA icon picker (FaIconPicker.vue) — 120+ curated icons, searchable
-- Award management — custom image upload, stored in public/storage/awards/
+### Admin Panel (50+ endpoints)
+- Dashboard — real stats (users, posts, threads, online, revenue, recent activity)
+- User management — search, ban, award, credits adjust, role change (refreshes immediately)
+- Forum tree — drag-to-reorder, full CRUD, FA icon picker
+- Forum Permissions editor — per-forum role/permission matrix
+- Award management — custom image upload
 - Store items + purchases
 - Achievements CRUD
-- Forum config — load/save all settings
-- Reorder API: POST /admin/games/reorder, /categories/reorder, /forums/reorder
+- Config — forum settings, credits, store, email/SMTP, usergroup legend toggle
+- Admin Groups — create/edit/delete roles with color + label
+- Reorder API for games/categories/forums
 
 ### Config System
-- All values stored as strings in forum_config table (key/value)
-- ForumConfig::get(key, default) + ForumConfig::set(key, value)
-- Frontend: forum.js store, `isMultiGame` + `isMaintenanceMode` getters coerce "true"/"false" strings
-- AdminConfig.vue coerces booleans on load (`=== 'true'`)
-- Accent color applied dynamically via CSS variable (--color-purple-accent) in App.vue
-- Forum name used in AppHeader, page titles, emails, register/login
-- Maintenance mode: router guard redirects non-admins to /maintenance (MaintenanceView.vue)
-- Multi-game mode: shows/hides game selector on HomeView
+- All values as strings in forum_config (key/value)
+- ForumConfig::get(key, default) + set(key, value) static helpers
+- Booleans stored as "true"/"false" — coerce with === 'true' on frontend
+- Cached in localStorage on frontend to prevent flash
 
 ### White-Label
-- Zero hardcoded brand names in code
-- Forum name, accent color, site URLs all from forum_config
+- Zero hardcoded brand names
+- Forum name, accent color, URLs all from forum_config
 - Emails use ForumConfig::get('forum_name')
-- Default seeds use 'My Forum' not 'VoltexaMC'
 
-### Installer
-- `php artisan voltexahub:install` — interactive command (forum name, URL, admin account, DB type, migrations, seeding, role assignment)
-- Supports flags: --forum-name=, --admin-email=, etc. for non-interactive
-- `install.sh` — 700-line full VPS installer: OS check, PHP/Composer/Node/MySQL/Nginx/Certbot/Soketi, DB creation, .env, migrations, seeders, admin via tinker, Nginx config, Let's Encrypt SSL, systemd services (voltexahub-app, voltexahub-queue, voltexahub-soketi)
-- README.md + INSTALL.md created
-
-### Bug Fixes (session 2026-03-02)
-- Config booleans stuck ON: DB stores `"true"`/`"false"` strings; fixed coercion everywhere
-- Credits page infinite loading: API returns `{balance, log:[]}`, code was assigning whole object to `creditsLog` (array), `.filter()` on object silently fails
-- API 500 "Route [login] not defined": Sanctum tried to redirect unauthenticated API requests to named `login` route; fixed in bootstrap/app.php to return 401 JSON
-- ConversationController::show() type error: `int $id` rejected string route params → `int|string $id`
-- APP_URL missing :8000 → avatar URLs wrong
-- Forum last_post stale after thread deletion
-- Thread create: forum_slug not accepted by backend
-- Config save payload key wrong
-- Forum icon: emoji → FA classes in DB
+### UI Polish
+- Dark/light mode toggle (FA moon/sun icons)
+- Postbit: group color top border, avatar, username, badge, stats (posts/credits/joined), awards
+- Date formatting utility: formatDate, formatDateTime, formatRelative, formatJoinDate
+- AppFooter: 4-column (Community, Account, Support) + "Powered by VoltexaHub"
+- All pages max-w-6xl for consistent layout
 
 ---
 
 ## What's Next 🔧
 
 ### High Priority
-1. **Thread subscriptions** — follow a thread, get notified on new replies
-   - `thread_subscriptions` table (user_id, thread_id)
-   - Subscribe/unsubscribe button in ThreadView
+1. **BBCode editor (Option C)** — Markdown + BBCode side by side
+   - s9e/TextFormatter PHP library for parsing
+   - BBCode toolbar: color, size, spoiler, code block, image, video embeds
+   - Store content as-is (mixed), parser handles both
+
+2. **Thread subscriptions**
+   - thread_subscriptions table (user_id, thread_id)
+   - Subscribe button in ThreadView
    - Trigger ThreadReply notification for subscribers
 
-2. **Report system** — report button on posts → admin moderation queue
-   - `reports` table (reporter_id, post_id, reason, status)
-   - Report button in post actions
-   - Admin moderation queue page
-
-3. **Public profile pages** — polish
-   - Post history tab
-   - Awards/achievements display
-   - Join date, post count, credits balance visible
-
-4. **Frontend password reset form** — /reset-password page needs to accept token + submit new password (backend already done)
+3. **Report system**
+   - reports table (reporter_id, post_id, reason, status)
+   - Report button on posts
+   - Admin moderation queue page (pending_reports already in dashboard)
 
 ### Medium Priority
-5. **Image embeds in markdown** — storage symlink exists, needs upload endpoint + paste/drag handler in MarkdownEditor
-6. **Thread solved/best answer** — mark a reply as solution (credits_for_solved), closed indicator
-7. **Test installer end-to-end** — run `php artisan voltexahub:install` on a clean SQLite DB
-8. **Email verification flow** — frontend redirect from email link → verify → redirect to forum
+4. **Image embeds** — upload endpoint + paste/drag handler in MarkdownEditor
+5. **Thread solved/best answer** — mark reply as solution, credits_for_solved
+6. **Frontend password reset form** — /reset-password (backend done)
+7. **Email verification flow** — frontend redirect from email link → verify
 
 ### Lower Priority
-9. **Soketi as background service** — currently manually started; add to installer systemd
-10. **Plugin system** — admin panel hook registration API (placeholder tab exists)
-11. **Leaderboard** — top credits earners, top posters
-12. **Tag system** — thread tags/flair, filter by tag
+8. **Leaderboard** — top credits earners, top posters
+9. **Tag/flair system** — thread tags, filter by tag
+10. **Thread prefixes** — [Guide], [Question], etc. with colors
+11. **Plugin system** — admin panel hook registration
+12. **Marketing site (voltexahub.com)** — showcase site separate from community subdomain
 
 ### Known Issues / Tech Debt
-- Email verification flow not wired on frontend (backend done)
-- RCON delivery untested end-to-end (needs a running game server)
-- Soketi must be started separately for real-time features
-- Stripe keys are placeholders in dev — need real keys to test checkout
-- `php artisan serve` used in systemd services; INSTALL.md notes this is a dev simplification
+- BBCode not yet implemented (just Markdown)
+- Email verification flow not wired on frontend
+- RCON delivery untested end-to-end
+- Stripe keys are placeholders in dev
+- `php artisan serve` in systemd (dev simplification — OK for now)
+- Server restart needed (`*** System restart required ***`) — VPS kernel update pending
 
 ---
 
 ## Architecture Notes
 - Frontend auth: Sanctum token in localStorage as `voltexahub_token`
-- API response format: `{ data: ..., message: ..., meta: ... }`
-- Admin routes: /api/admin/* protected by auth:sanctum + role:admin
-- Forum config: key/value strings in forum_config table — always coerce booleans client-side
+- API format: `{ data: ..., message: ..., meta: ... }`
+- Admin routes: /api/admin/* — auth:sanctum + role:admin
+- Forum config: key/value strings — always coerce booleans client-side
 - Credits: all changes logged in credits_log with balance_after
-- Forum model: has `threads()` hasMany + `subforums()` hasMany — NO direct posts() relationship
-- Public forum tree: games → categories → forums (same structure as admin)
-- Emails: queued via database queue, log driver locally
-- Avatar storage: symlink public/storage → storage/app/public; APP_URL must include port (:8000)
+- Forum model: threads() hasMany + subforums() hasMany — NO direct posts() relation
+- Public forum tree: games → categories → forums
+- Emails: queued via database queue
+- group_color / group_label: computed on User model via $appends, reads ForumConfig at runtime
+- Forum permissions: no row = all allowed (open by default)
 
 ## Key Files
 ```
 voltexaforum/src/
   services/api.js              — all API calls
   stores/auth.js               — auth (token, user, setAvatarUrl)
-  stores/forum.js              — config cache (isMultiGame, isMaintenanceMode)
+  stores/forum.js              — config (localStorage cache, isMultiGame, isMaintenanceMode)
   stores/notifications.js      — notification state
   stores/messages.js           — DM state
   stores/presence.js           — online users (Soketi)
   echo.js                      — Laravel Echo setup
   router/index.js              — routes + guards (auth, admin, maintenance)
-  views/admin/AdminConfig.vue  — all forum settings (booleans coerced on load)
-  views/CreditsView.vue        — credits log + earning guide
-  views/MaintenanceView.vue    — maintenance mode page
+  utils/date.js                — formatDate, formatDateTime, formatRelative, formatJoinDate
+  components/AppFooter.vue     — sitewide footer
+  components/UsergroupLegend.vue — horizontal group legend
   components/MarkdownEditor.vue
   components/MarkdownRenderer.vue
   components/FaIconPicker.vue
+  components/UserAvatar.vue
   components/NotificationDropdown.vue
   components/ComposeModal.vue
+  views/admin/AdminConfig.vue  — all settings (email, credits, store, general)
+  views/admin/AdminForumPermissions.vue — per-forum permission matrix
+  views/admin/AdminGroups.vue  — usergroup CRUD
+  views/MembersView.vue        — public members directory
+  views/StaffView.vue          — public staff page
 
 voltexahub/
   app/Http/Controllers/Api/    — public + auth controllers
   app/Http/Controllers/Api/Admin/ — admin controllers
   app/Models/ForumConfig.php   — get/set static helpers
+  app/Models/ForumPermission.php — per-forum permissions
+  app/Models/User.php          — group_color + group_label in $appends
+  app/Providers/AppServiceProvider.php — applies mail config from DB at runtime
   app/Services/RconService.php
   app/Services/DeliveryService.php
   app/Jobs/DeliverPurchase.php
@@ -240,4 +264,5 @@ voltexahub/
   database/seeders/DefaultContentSeeder.php — idempotent firstOrCreate
   routes/api.php
   bootstrap/app.php            — exception handler (API → 401 JSON)
+  install.sh                   — full VPS installer
 ```
