@@ -29,6 +29,10 @@ class ForumConfigSeeder extends Seeder
             'credits_daily_post_limit' => '50',
             'role_credit_multipliers' => '{"admin":1.0,"moderator":1.0,"member":1.0}',
 
+            // Usergroup Legend
+            'show_usergroup_legend'    => 'true',
+            'usergroup_legend_groups'  => json_encode(['admin','moderator','vip','elite','member']),
+
             // Email / SMTP (empty = use .env defaults)
             'mail_mailer'       => '',
             'mail_host'         => '',

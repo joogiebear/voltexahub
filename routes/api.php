@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\AdminConfigController;
 use App\Http\Controllers\Api\Admin\AdminGroupController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminForumController;
+use App\Http\Controllers\Api\Admin\AdminForumPermissionController;
 use App\Http\Controllers\Api\Admin\AdminModerationController;
 use App\Http\Controllers\Api\Admin\AdminStoreController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
@@ -174,4 +175,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/config', [AdminConfigController::class, 'index']);
     Route::put('/config', [AdminConfigController::class, 'update']);
     Route::post('/config/test-email', [AdminConfigController::class, 'testEmail']);
+    Route::get('/forums/{forum}/permissions', [AdminForumPermissionController::class, 'index']);
+    Route::put('/forums/{forum}/permissions', [AdminForumPermissionController::class, 'update']);
 });

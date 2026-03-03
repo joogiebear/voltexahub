@@ -41,4 +41,16 @@ class Forum extends Model
     {
         return $this->belongsTo(User::class, 'last_post_user_id');
     }
+
+    public function forumPermissions()
+    {
+        return $this->hasMany(ForumPermission::class);
+    }
+
+    public function permissionFor(string $role): array
+    {
+        $perm = $this->forumPermissions()->where('role_name', $role)->first();
+        if (!$perm) return ['can_view' => true, 'can_post' => true, 'can_reply' => true];
+        return ['can_view' => $perm->can_view, 'can_post' => $perm->can_post, 'can_reply' => $perm->can_reply];
+    }
 }
