@@ -306,9 +306,13 @@ class UserController extends Controller
         $sort = $request->get('sort', 'joined'); // joined|posts|credits|username
         $search = $request->get('q', '');
 
+        $letter = $request->get('letter', '');
+
         $query = User::with('roles')
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'banned'))
-            ->when($search, fn ($q) => $q->where('username', 'like', "%{$search}%"));
+            ->when($search, fn ($q) => $q->where('username', 'like', "%{$search}%"))
+            ->when($letter && $letter !== '#', fn ($q) => $q->where('username', 'like', "{$letter}%"))
+            ->when($letter === '#', fn ($q) => $q->whereRaw('username NOT REGEXP \'^[a-zA-Z]\''));
 
         $query->orderBy(match ($sort) {
             'posts'    => 'post_count',
