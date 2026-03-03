@@ -70,7 +70,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function avatarUrl(): Attribute
     {
         return Attribute::get(fn () => $this->avatar_path
-            ? Storage::disk('public')->url($this->avatar_path)
+            ? '/storage/' . $this->avatar_path
             : null
         );
     }
