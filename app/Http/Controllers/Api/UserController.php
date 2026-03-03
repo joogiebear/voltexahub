@@ -321,15 +321,16 @@ class UserController extends Controller
 
         return response()->json([
             'data' => $members->through(fn ($u) => [
-                'id'          => $u->id,
-                'username'    => $u->username,
-                'avatar_url'  => $u->avatar_url,
-                'avatar_color'=> $u->avatar_color,
-                'post_count'  => $u->post_count ?? 0,
-                'credits'     => $u->credits ?? 0,
-                'joined'      => $u->created_at,
-                'is_online'   => $u->last_seen && $u->last_seen->gte(now()->subMinutes(15)),
-                'primary_role'=> $u->roles->first()?->name,
+                'id'           => $u->id,
+                'username'     => $u->username,
+                'avatar_url'   => $u->avatar_url,
+                'avatar_color' => $u->avatar_color,
+                'post_count'   => $u->post_count ?? 0,
+                'credits'      => $u->credits ?? 0,
+                'joined'       => $u->created_at,
+                'is_online'    => $u->last_seen && $u->last_seen->gte(now()->subMinutes(15)),
+                'primary_role' => $u->roles->first()?->name,
+                'custom_title' => $u->custom_title ?? null,
             ]),
             'meta' => [
                 'total'        => $members->total(),
