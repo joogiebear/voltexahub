@@ -28,6 +28,16 @@ class ForumConfigSeeder extends Seeder
             'credits_per_like_given' => '0',
             'credits_daily_post_limit' => '50',
             'role_credit_multipliers' => '{"admin":1.0,"moderator":1.0,"member":1.0}',
+
+            // Email / SMTP (empty = use .env defaults)
+            'mail_mailer'       => '',
+            'mail_host'         => '',
+            'mail_port'         => '587',
+            'mail_username'     => '',
+            'mail_password'     => '',
+            'mail_encryption'   => 'tls',
+            'mail_from_address' => '',
+            'mail_from_name'    => '',
         ];
 
         foreach ($configs as $key => $value) {
