@@ -34,7 +34,7 @@ class UserController extends Controller
         $user->load([
             'roles',
             'userAwards.award',
-            'userAchievements.achievement',
+            'userAchievements' => fn($q) => $q->whereNotNull('unlocked_at')->with('achievement'),
             'activeCosmetic.storeItem',
         ]);
 
@@ -85,7 +85,7 @@ class UserController extends Controller
                     "description" => $ua->achievement->description ?? "",
                     "icon" => $ua->achievement->icon ?? "fa-solid fa-star",
                     "unlocked" => true,
-                    "unlocked_at" => $ua->created_at?->toISOString(),
+                    "unlocked_at" => $ua->unlocked_at?->toISOString(),
                 ]),
                 "recent_posts" => $recentPosts->map(fn($p) => [
                     "id" => $p->id,
@@ -190,6 +190,7 @@ class UserController extends Controller
         $user->checkAchievements();
 
         $achievements = $user->userAchievements()
+            ->whereNotNull('unlocked_at')
             ->with('achievement')
             ->get();
 
