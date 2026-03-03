@@ -6,6 +6,7 @@ use App\Events\NewNotification;
 use App\Http\Controllers\Controller;
 use App\Models\ForumConfig;
 use App\Models\Post;
+use App\Models\PostLike;
 use App\Models\Reaction;
 use App\Models\Thread;
 use App\Models\ThreadSubscription;
@@ -35,8 +36,25 @@ class PostController extends Controller
             ->orderBy('created_at')
             ->paginate(10);
 
+        // Batch-load post like data
+        $postIds = collect($posts->items())->pluck('id');
+        $likeCounts = PostLike::whereIn('post_id', $postIds)
+            ->groupBy('post_id')
+            ->selectRaw('post_id, count(*) as count')
+            ->pluck('count', 'post_id');
+        $likedByMe = auth()->check()
+            ? PostLike::where('user_id', auth()->id())->whereIn('post_id', $postIds)->pluck('post_id')->flip()
+            : collect();
+
+        $items = collect($posts->items())->map(function ($post) use ($likeCounts, $likedByMe) {
+            $post = $post->toArray();
+            $post['like_count'] = $likeCounts[$post['id']] ?? 0;
+            $post['is_liked_by_me'] = isset($likedByMe[$post['id']]);
+            return $post;
+        });
+
         return response()->json([
-            'data' => $posts->items(),
+            'data' => $items->values(),
             'meta' => [
                 'current_page' => $posts->currentPage(),
                 'last_page' => $posts->lastPage(),
@@ -136,14 +154,18 @@ class PostController extends Controller
             }
         }
 
+        $postData = $post->load([
+            'user' => fn ($q) => $q->select(
+                'id', 'username', 'avatar_color', 'avatar_path', 'user_title',
+                'post_count', 'credits', 'created_at'
+            ),
+            'user.roles',
+        ])->toArray();
+        $postData['like_count'] = 0;
+        $postData['is_liked_by_me'] = false;
+
         return response()->json([
-            'data' => $post->load([
-                'user' => fn ($q) => $q->select(
-                    'id', 'username', 'avatar_color', 'avatar_path', 'user_title',
-                    'post_count', 'credits', 'created_at'
-                ),
-                'user.roles',
-            ]),
+            'data' => $postData,
             'message' => 'Reply posted successfully.',
         ], 201);
     }
@@ -169,14 +191,18 @@ class PostController extends Controller
             'edit_count' => $post->edit_count + 1,
         ]);
 
+        $updatedPost = $post->fresh()->load([
+            'user' => fn ($q) => $q->select(
+                'id', 'username', 'avatar_color', 'avatar_path', 'user_title',
+                'post_count', 'credits', 'created_at'
+            ),
+            'user.roles',
+        ])->toArray();
+        $updatedPost['like_count'] = PostLike::where('post_id', $post->id)->count();
+        $updatedPost['is_liked_by_me'] = auth()->check() && PostLike::where('user_id', auth()->id())->where('post_id', $post->id)->exists();
+
         return response()->json([
-            'data' => $post->fresh()->load([
-                'user' => fn ($q) => $q->select(
-                    'id', 'username', 'avatar_color', 'avatar_path', 'user_title',
-                    'post_count', 'credits', 'created_at'
-                ),
-                'user.roles',
-            ]),
+            'data' => $updatedPost,
             'message' => 'Post updated successfully.',
         ]);
     }
@@ -223,6 +249,39 @@ class PostController extends Controller
         return response()->json([
             'message' => 'Reaction added.',
         ], 201);
+    }
+
+    public function likePost(Request $request, int $postId): JsonResponse
+    {
+        $post = Post::findOrFail($postId);
+        $userId = auth()->id();
+
+        $existing = PostLike::where('user_id', $userId)->where('post_id', $postId)->first();
+
+        if ($existing) {
+            $existing->delete();
+            $liked = false;
+        } else {
+            PostLike::create(['user_id' => $userId, 'post_id' => $postId]);
+            $liked = true;
+
+            // Award credits to post author (reuse credits_per_like config, skip self-likes)
+            if ($post->user_id !== $userId) {
+                $creditsPerLike = (int) ForumConfig::get('credits_per_like', 1);
+                if ($creditsPerLike > 0) {
+                    $post->user->addCredits($creditsPerLike, 'Post liked', Post::class, $post->id);
+                }
+            }
+        }
+
+        $likeCount = PostLike::where('post_id', $postId)->count();
+
+        return response()->json([
+            'data' => [
+                'liked' => $liked,
+                'like_count' => $likeCount,
+            ]
+        ]);
     }
 
     public function destroy(Request $request, int $postId): JsonResponse

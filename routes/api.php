@@ -90,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/threads', [ThreadController::class, 'store']);
     Route::post('/threads/{id}/posts', [PostController::class, 'store']);
     Route::post('/posts/{id}/react', [PostController::class, 'react']);
+    Route::post('/posts/{id}/like', [PostController::class, 'likePost']);
     Route::put('/posts/{id}', [PostController::class, 'update']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
     Route::put('/threads/{id}', [ThreadController::class, 'update']);
