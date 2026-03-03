@@ -425,20 +425,32 @@ info 'Linking storage...'
 php artisan storage:link --force 2>/dev/null || php artisan storage:link
 success 'Storage linked'
 
-# Build frontend if available
-info 'Looking for frontend...'
+# Clone and build frontend
+info 'Setting up frontend...'
 FRONTEND_DIR="$(dirname "$INSTALL_DIR")/voltexaforum"
+if [ ! -d "$FRONTEND_DIR" ]; then
+  info 'Cloning voltexaforum...'
+  git clone --depth=1 https://github.com/joogiebear/voltexaforum.git "$FRONTEND_DIR" >/dev/null 2>&1
+fi
+
 if [ -d "$FRONTEND_DIR" ]; then
   info 'Building frontend...'
   cd "$FRONTEND_DIR"
   npm install --silent 2>/dev/null
-  echo "VITE_API_URL=$SITE_URL" > .env
+  # Write Vite env — use relative /api since Nginx proxies it
+  cat > .env.production << VITEENV
+VITE_API_URL=/api
+VITE_PUSHER_APP_KEY=voltexahub-key
+VITE_PUSHER_HOST=$DOMAIN
+VITE_PUSHER_PORT=6001
+VITE_PUSHER_SCHEME=https
+VITEENV
   npm run build --silent 2>/dev/null
   success 'Frontend built'
   cd "$INSTALL_DIR"
 else
-  warn "Frontend directory not found at $FRONTEND_DIR — skipping frontend build"
-  warn "You can build it later by cloning voltexaforum next to this directory"
+  warn "Could not clone frontend — Nginx will fallback to Laravel public dir"
+  warn "Run manually: git clone https://github.com/joogiebear/voltexaforum.git $FRONTEND_DIR && cd $FRONTEND_DIR && npm install && npm run build"
 fi
 
 # ---------------------------------------------------------------------------
