@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\Admin\AdminConfigController;
 use App\Http\Controllers\Api\Admin\AdminContentController;
 use App\Http\Controllers\Api\Admin\AdminLogoController;
 use App\Http\Controllers\Api\Admin\AdminGroupController;
+use App\Http\Controllers\Api\Admin\AdminUpgradePlanController;
+use App\Http\Controllers\Api\UpgradePlanController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminPluginController;
 use App\Http\Controllers\Api\Admin\AdminReportController;
@@ -52,6 +54,7 @@ Route::get('/members', [UserController::class, 'members']);
 Route::get('/staff', [UserController::class, 'staff']);
 Route::get('/users/{username}/profile', [UserController::class, 'profile']);
 Route::get('/search', [SearchController::class, 'search']);
+Route::get('/upgrade-plans', [UpgradePlanController::class, 'index']);
 Route::get('/credits/earning-info', [CreditsController::class, 'earningInfo']);
 Route::get('/public/custom-code', [PublicConfigController::class, 'customCode']);
 
@@ -206,6 +209,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::put('/forums/{forum}/permissions', [AdminForumPermissionController::class, 'update']);
     Route::get('/group-permissions', [AdminGroupPermissionController::class, 'index']);
     Route::put('/group-permissions', [AdminGroupPermissionController::class, 'update']);
+    Route::get('/upgrade-plans', [AdminUpgradePlanController::class, 'index']);
+    Route::post('/upgrade-plans', [AdminUpgradePlanController::class, 'store']);
+    Route::put('/upgrade-plans/{id}', [AdminUpgradePlanController::class, 'update']);
+    Route::delete('/upgrade-plans/{id}', [AdminUpgradePlanController::class, 'destroy']);
 
     // Reports
     Route::get('/reports', [AdminReportController::class, 'index']);
