@@ -65,13 +65,13 @@ class UserController extends Controller
                 "is_online" => $isOnline,
                 "roles" => $user->roles->map(fn($r) => [
                     "name" => $r->name,
-                    "color" => \App\Models\ForumConfig::get("group_color_".$r->name, "#6b7280"),
-                    "label" => \App\Models\ForumConfig::get("group_label_".$r->name, ucfirst($r->name)),
+                    "color" => $r->color ?? "#6b7280",
+                    "label" => $r->label ?? ucfirst($r->name),
                 ]),
-                "primary_role" => $user->roles->first() ? [
-                    "name" => $user->roles->first()->name,
-                    "color" => \App\Models\ForumConfig::get("group_color_".$user->roles->first()->name, "#6b7280"),
-                    "label" => \App\Models\ForumConfig::get("group_label_".$user->roles->first()->name, ucfirst($user->roles->first()->name)),
+                "primary_role" => ($pr = $user->roles->first(fn($r) => $r->name !== 'banned') ?? $user->roles->first()) ? [
+                    "name" => $pr->name,
+                    "color" => $pr->color ?? "#6b7280",
+                    "label" => $pr->label ?? ucfirst($pr->name),
                 ] : null,
                 "awards" => $user->userAwards->map(fn($ua) => [
                     "id" => $ua->id,
