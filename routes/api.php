@@ -22,11 +22,13 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\CreditsController;
 use App\Http\Controllers\Api\ForumConfigController;
 use App\Http\Controllers\Api\ForumController;
 use App\Http\Controllers\Api\GameController;
+use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PublicConfigController;
 use App\Http\Controllers\Api\PostbitBgController;
@@ -62,6 +64,7 @@ Route::get('/public/custom-code', [PublicConfigController::class, 'customCode'])
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/content/preview', [ContentController::class, 'preview']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 // Email verification (signed URL — no auth needed)
@@ -91,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/sessions', [UserController::class, 'sessions']);
     Route::delete('/user/sessions/{id}', [UserController::class, 'destroySession']);
     Route::post('/user/avatar', [AvatarController::class, 'store']);
+    Route::post('/media/image', [MediaController::class, 'store']);
     Route::middleware('role:admin')->group(function () {
         Route::post('/user/postbit-bg', [PostbitBgController::class, 'upload']);
         Route::delete('/user/postbit-bg', [PostbitBgController::class, 'remove']);
