@@ -10,8 +10,13 @@ class UpgradePlan extends Model
         'name', 'slug', 'description', 'color', 'price', 'term',
         'role_name', 'rep_power_pos', 'rep_power_neg', 'rep_daily_limit',
         'features', 'one_time_bonus', 'stripe_price_id',
-        'display_order', 'is_active', 'is_featured',
+        'display_order', 'is_active', 'is_featured', 'required_plan_id',
     ];
+
+    public function requiredPlan()
+    {
+        return $this->belongsTo(UpgradePlan::class, 'required_plan_id');
+    }
 
     protected $casts = [
         'features'        => 'array',

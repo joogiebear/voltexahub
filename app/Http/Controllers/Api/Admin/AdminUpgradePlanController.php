@@ -12,7 +12,7 @@ class AdminUpgradePlanController extends Controller
 {
     public function index(): JsonResponse
     {
-        $plans = UpgradePlan::orderBy('display_order')->orderBy('price')->get();
+        $plans = UpgradePlan::with('requiredPlan:id,name,color')->orderBy('display_order')->orderBy('price')->get();
         return response()->json(['data' => $plans]);
     }
 
@@ -34,6 +34,7 @@ class AdminUpgradePlanController extends Controller
             'display_order'   => 'integer',
             'is_active'       => 'boolean',
             'is_featured'     => 'boolean',
+            'required_plan_id' => 'nullable|exists:upgrade_plans,id',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(4);
@@ -61,8 +62,9 @@ class AdminUpgradePlanController extends Controller
             'one_time_bonus'  => 'nullable|array',
             'stripe_price_id' => 'nullable|string',
             'display_order'   => 'integer',
-            'is_active'       => 'boolean',
-            'is_featured'     => 'boolean',
+            'is_active'        => 'boolean',
+            'is_featured'      => 'boolean',
+            'required_plan_id' => 'nullable|exists:upgrade_plans,id',
         ]);
 
         $plan->update($validated);
