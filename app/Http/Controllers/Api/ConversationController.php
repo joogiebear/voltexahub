@@ -18,7 +18,7 @@ class ConversationController extends Controller
         $user = $request->user();
 
         $conversations = $user->conversations()
-            ->with(['users' => fn ($q) => $q->select('users.id', 'username', 'avatar_color')
+            ->with(['users' => fn ($q) => $q->select('users.id', 'username', 'avatar_color', 'avatar_path')
                 ->where('users.id', '!=', $user->id)])
             ->get()
             ->map(function ($conversation) use ($user) {
@@ -106,7 +106,7 @@ class ConversationController extends Controller
         ]);
 
         $messages = $conversation->messages()
-            ->with('sender:id,username,avatar_color')
+            ->with('sender:id,username,avatar_color,avatar_path')
             ->latest()
             ->paginate(30);
 
@@ -138,7 +138,7 @@ class ConversationController extends Controller
             'body' => $validated['body'],
         ]);
 
-        $message->load('sender:id,username,avatar_color');
+        $message->load('sender:id,username,avatar_color,avatar_path');
 
         // Update conversation timestamp
         $conversation->touch();
