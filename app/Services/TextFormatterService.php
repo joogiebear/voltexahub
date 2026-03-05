@@ -30,7 +30,7 @@ class TextFormatterService
         $protected = preg_replace_callback(
             '/\[(?:lock|b|i|u|s|color|size|spoiler|img|media|code|quote|list|\*)[^\]]*\].*?\[\/(?:lock|b|i|u|s|color|size|spoiler|img|media|code|quote|list)[^\]]*\]/si',
             function ($m) use (&$placeholders, &$counter) {
-                $key = "\x00BBCODE{$counter}\x00";
+                $key = "VHBBCODE{$counter}VHEND";
                 $placeholders[$key] = $m[0];
                 $counter++;
                 return $key;
