@@ -14,7 +14,7 @@ class AvatarController extends Controller
     public function store(Request $request, ImageUploadService $imageService): JsonResponse
     {
         $request->validate([
-            'avatar' => ['required', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
+            'avatar' => ['required', 'file', 'max:10240'],
         ]);
 
         $user = $request->user();

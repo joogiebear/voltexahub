@@ -14,7 +14,7 @@ class PostbitBgController extends Controller
     public function upload(Request $request, ImageUploadService $imageService): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp', 'max:10240'],
+            'image' => ['required', 'file', 'max:10240'],
         ]);
 
         $user = $request->user();

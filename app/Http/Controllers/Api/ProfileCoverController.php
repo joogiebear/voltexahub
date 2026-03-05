@@ -13,7 +13,7 @@ class ProfileCoverController extends Controller
     public function store(Request $request, ImageUploadService $imageService): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
+            'image' => ['required', 'file', 'max:10240'],
         ]);
 
         $user = $request->user();
