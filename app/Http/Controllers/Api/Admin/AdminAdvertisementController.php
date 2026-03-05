@@ -24,7 +24,7 @@ class AdminAdvertisementController extends Controller
             'url' => ['nullable', 'string', 'max:500'],
             'position' => ['required', 'in:header,sidebar,footer'],
             'display_order' => ['nullable', 'integer'],
-            'image' => ['nullable', 'image', 'max:5120'],
+            'image' => ['nullable', 'file', 'max:10240'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -47,7 +47,7 @@ class AdminAdvertisementController extends Controller
             'url' => ['nullable', 'string', 'max:500'],
             'position' => ['sometimes', 'in:header,sidebar,footer'],
             'display_order' => ['nullable', 'integer'],
-            'image' => ['nullable', 'image', 'max:5120'],
+            'image' => ['nullable', 'file', 'max:10240'],
         ]);
 
         if ($request->hasFile('image')) {
