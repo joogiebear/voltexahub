@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ImageUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileCoverController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, ImageUploadService $imageService): JsonResponse
     {
         $request->validate([
             'image' => ['required', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
@@ -21,7 +22,8 @@ class ProfileCoverController extends Controller
             Storage::disk('public')->delete($user->cover_photo_path);
         }
 
-        $path = $request->file('image')->store('covers', 'public');
+        // Resize to 1500×500, crop to fit, convert to WebP
+        $path = $imageService->store($request->file('image'), 'covers', 1500, 500, 85, true);
         $user->update(['cover_photo_path' => $path]);
 
         return response()->json([
