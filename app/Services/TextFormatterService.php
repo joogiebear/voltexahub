@@ -23,6 +23,21 @@ class TextFormatterService
      */
     public function renderFromText(string $text): string
     {
+        // Handle [lock=N]...[/lock] — render as blurred locked content div
+        $text = preg_replace_callback(
+            '/\[lock(?:=(\d+))?\](.*?)\[\/lock\]/si',
+            function ($m) {
+                $cost = $m[1] ?: \App\Models\ForumConfig::get('locked_content_default_cost', '50');
+                $inner = htmlspecialchars($m[2]);
+                $hash = hash('sha256', $m[2]);
+                return sprintf(
+                    '<div class="locked-content" data-hash="%s" data-cost="%d"><div class="locked-content-inner">%s</div></div>',
+                    $hash, (int)$cost, $inner
+                );
+            },
+            $text
+        );
+
         // 1. Pull out BBCode blocks so CommonMark doesn't mangle them
         $placeholders = [];
         $counter = 0;

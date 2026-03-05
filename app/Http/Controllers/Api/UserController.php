@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\PerkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -20,6 +21,15 @@ class UserController extends Controller
             ->where('is_active', true)
             ->with('storeItem')
             ->get();
+
+        $perkService = app(PerkService::class);
+        $perkTypes = [
+            PerkService::NO_ADS, PerkService::BYPASS_UNLOCK, PerkService::PROFILE_COVER,
+            PerkService::CUSTOM_CSS, PerkService::LOCKED_BYPASS, PerkService::CHANGE_USERNAME,
+            PerkService::USERBAR_HUE, PerkService::USERNAME_COLOR, PerkService::AWARDS_REORDER,
+            PerkService::PRE_ACCESS,
+        ];
+        $user->perks = array_values(array_filter($perkTypes, fn ($t) => $perkService->userHasPerk($user, $t)));
 
         return response()->json([
             'data' => $user,
@@ -98,6 +108,10 @@ class UserController extends Controller
                 "twitter_handle" => $user->twitter_handle ?? null,
                 "website_url" => $user->website_url ?? null,
                 "minecraft_ign" => $user->minecraft_ign ?? null,
+                "cover_url" => $user->cover_url,
+                "custom_css" => $user->custom_css,
+                "username_color" => $user->username_color,
+                "userbar_hue" => $user->userbar_hue,
             ],
         ]);
     }

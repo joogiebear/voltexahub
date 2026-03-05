@@ -45,6 +45,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'minecraft_verified',
         'rust_steam_id',
         'rust_verified',
+        'cover_photo_path',
+        'custom_css',
+        'username_color',
+        'userbar_hue',
+        'username_changed_at',
+        'awards_sort_order',
     ];
 
     protected $hidden = [
@@ -52,7 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
-    protected $appends = ['avatar_url', 'group_color', 'group_label'];
+    protected $appends = ['avatar_url', 'group_color', 'group_label', 'cover_url'];
 
     protected function casts(): array
     {
@@ -66,6 +72,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'rust_verified' => 'boolean',
             'credits' => 'integer',
             'post_count' => 'integer',
+            'username_changed_at' => 'datetime',
+            'awards_sort_order' => 'array',
         ];
     }
 
@@ -73,6 +81,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return Attribute::get(fn () => $this->avatar_path
             ? '/storage/' . $this->avatar_path
+            : null
+        );
+    }
+
+    protected function coverUrl(): Attribute
+    {
+        return Attribute::get(fn () => $this->cover_photo_path
+            ? Storage::disk('public')->url($this->cover_photo_path)
             : null
         );
     }

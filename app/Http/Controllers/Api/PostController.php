@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ThreadReplyNotification;
 use App\Notifications\ThreadSubscriptionNotification;
+use App\Services\PerkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -79,11 +80,16 @@ class PostController extends Controller
             return $this->denyReply();
         }
 
+        $user = $request->user();
+
+        $minPosts = (int) ForumConfig::get('unlock_req_min_posts', 0);
+        if ($minPosts > 0 && $user->post_count < $minPosts && !app(PerkService::class)->userHasPerk($user, PerkService::BYPASS_UNLOCK)) {
+            return response()->json(['message' => "You need at least {$minPosts} posts to reply."], 422);
+        }
+
         $validated = $request->validate([
             'body' => ['required', 'string', 'min:3'],
         ]);
-
-        $user = $request->user();
 
         $post = $thread->posts()->create([
             'user_id' => $user->id,

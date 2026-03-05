@@ -10,16 +10,22 @@ use App\Http\Controllers\Api\Admin\AdminGroupController;
 use App\Http\Controllers\Api\Admin\AdminUpgradePlanController;
 use App\Http\Controllers\Api\UpgradePlanController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
+use App\Http\Controllers\Api\Admin\AdminAdvertisementController;
 use App\Http\Controllers\Api\Admin\AdminPluginController;
 use App\Http\Controllers\Api\Admin\AdminReportController;
+use App\Http\Controllers\Api\Admin\AdminUnlockRequirementsController;
 use App\Http\Controllers\Api\Admin\AdminForumController;
 use App\Http\Controllers\Api\Admin\AdminForumPermissionController;
 use App\Http\Controllers\Api\Admin\AdminGroupPermissionController;
 use App\Http\Controllers\Api\Admin\AdminModerationController;
 use App\Http\Controllers\Api\Admin\AdminStoreController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\AdvertisementController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\LockedContentController;
+use App\Http\Controllers\Api\ProfileCoverController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\UserPerkController;
 use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ContentController;
@@ -59,6 +65,7 @@ Route::get('/search', [SearchController::class, 'search']);
 Route::get('/upgrade-plans', [UpgradePlanController::class, 'index']);
 Route::get('/credits/earning-info', [CreditsController::class, 'earningInfo']);
 Route::get('/public/custom-code', [PublicConfigController::class, 'customCode']);
+Route::get('/ads', [AdvertisementController::class, 'index']);
 
 // Auth routes
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -99,6 +106,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/user/postbit-bg', [PostbitBgController::class, 'upload']);
         Route::delete('/user/postbit-bg', [PostbitBgController::class, 'remove']);
     });
+
+    // Profile cover
+    Route::post('/user/cover', [ProfileCoverController::class, 'store']);
+    Route::delete('/user/cover', [ProfileCoverController::class, 'destroy']);
+
+    // User perks
+    Route::post('/user/custom-css', [UserPerkController::class, 'saveCustomCss']);
+    Route::post('/user/username-color', [UserPerkController::class, 'saveUsernameColor']);
+    Route::post('/user/userbar-hue', [UserPerkController::class, 'saveUserbarHue']);
+    Route::post('/user/change-username', [UserPerkController::class, 'changeUsername']);
+    Route::post('/user/awards-order', [UserPerkController::class, 'saveAwardsOrder']);
+
+    // Locked content
+    Route::post('/locked-content/unlock', [LockedContentController::class, 'unlock']);
+    Route::get('/locked-content/check', [LockedContentController::class, 'check']);
 
     // Forum actions
     Route::post('/threads', [ThreadController::class, 'store']);
@@ -225,6 +247,17 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // Content management
     Route::get('/content/threads', [AdminContentController::class, 'threads']);
     Route::get('/content/posts', [AdminContentController::class, 'posts']);
+
+    // Advertisements
+    Route::get('/advertisements', [AdminAdvertisementController::class, 'index']);
+    Route::post('/advertisements', [AdminAdvertisementController::class, 'store']);
+    Route::put('/advertisements/{id}', [AdminAdvertisementController::class, 'update']);
+    Route::delete('/advertisements/{id}', [AdminAdvertisementController::class, 'destroy']);
+    Route::post('/advertisements/{id}/toggle', [AdminAdvertisementController::class, 'toggle']);
+
+    // Unlock requirements
+    Route::get('/unlock-requirements', [AdminUnlockRequirementsController::class, 'show']);
+    Route::put('/unlock-requirements', [AdminUnlockRequirementsController::class, 'update']);
 
     // Plugins
     Route::get('/plugins', [AdminPluginController::class, 'index']);
