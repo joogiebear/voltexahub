@@ -109,6 +109,7 @@ class UserController extends Controller
                 "website_url" => $user->website_url ?? null,
                 "minecraft_ign" => $user->minecraft_ign ?? null,
                 "cover_url" => $user->cover_url,
+                "cover_overlay_opacity" => $user->cover_overlay_opacity ?? 20,
                 "custom_css" => $user->custom_css,
                 "username_color" => $user->username_color,
                 "userbar_hue" => $user->userbar_hue,
