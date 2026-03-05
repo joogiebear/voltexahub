@@ -28,19 +28,26 @@ class ImageUploadService
         int $quality = 85,
         bool $cover = false
     ): string {
+        // GIFs (especially animated) don't survive WebP conversion via GD.
+        // Store them directly without processing to preserve animation.
+        if (in_array(strtolower($file->getClientOriginalExtension()), ['gif'])
+            || $file->getMimeType() === 'image/gif') {
+            $filename = Str::random(40) . '.gif';
+            $path = $directory . '/' . $filename;
+            Storage::disk('public')->put($path, file_get_contents($file->getRealPath()));
+            return $path;
+        }
+
         $filename = Str::random(40) . '.webp';
         $path = $directory . '/' . $filename;
 
         $img = Image::read($file);
 
         if ($height && $cover) {
-            // Crop to exact dimensions (cover/postbit)
             $img->cover($width, $height);
         } elseif ($height) {
-            // Fit within box, maintaining aspect ratio
             $img->scaleDown($width, $height);
         } else {
-            // Constrain width only
             $img->scaleDown($width);
         }
 
