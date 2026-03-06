@@ -18,6 +18,7 @@ fi
 
 INSTANCE_ID="${SUBDOMAIN}"
 INSTANCE_DIR="${FORUMS_DIR}/${INSTANCE_ID}"
+ADMIN_PASSWORD="$(openssl rand -base64 12 | tr -d '/+=' | head -c 16)"
 
 if [ -d "$INSTANCE_DIR" ]; then
   echo "Instance '${INSTANCE_ID}' already exists."
@@ -89,26 +90,26 @@ fi
 echo "==> Waiting for instance to initialize..."
 sleep 10
 
-# Create admin user if email provided
-if [ -n "$ADMIN_EMAIL" ]; then
-  echo "==> Creating admin user: ${ADMIN_EMAIL}"
-  docker exec "forum_${INSTANCE_ID}" php artisan tinker --execute="
-    \$user = App\Models\User::create([
-      'username' => 'admin',
-      'email' => '${ADMIN_EMAIL}',
-      'password' => bcrypt('ChangeMe123!'),
-      'email_verified_at' => now(),
-    ]);
-    \$adminRole = Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
-    \$user->assignRole(\$adminRole);
-    echo 'Admin created: ${ADMIN_EMAIL}';
-  " 2>/dev/null || true
-fi
+# Create default admin user
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@${SUBDOMAIN}.voltexahub.com}"
+echo "==> Creating admin user..."
+docker exec "forum_${INSTANCE_ID}" php artisan tinker --execute="
+  \$role = Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+  \$user = App\Models\User::create([
+    'name' => 'Admin',
+    'username' => 'admin',
+    'email' => '${ADMIN_EMAIL}',
+    'password' => bcrypt('${ADMIN_PASSWORD}'),
+    'email_verified_at' => now(),
+  ]);
+  \$user->assignRole(\$role);
+  echo 'Admin created.';
+" 2>/dev/null || true
 
 echo ""
 echo "✅ Forum provisioned!"
-echo "   URL:   https://${SUBDOMAIN}.voltexahub.com"
-if [ -n "$ADMIN_EMAIL" ]; then
-  echo "   Admin: ${ADMIN_EMAIL} / ChangeMe123!"
-fi
+echo "   URL:      https://${SUBDOMAIN}.voltexahub.com"
+echo "   Username: admin"
+echo "   Email:    ${ADMIN_EMAIL}"
+echo "   Password: ${ADMIN_PASSWORD}"
 echo "   Container: forum_${INSTANCE_ID}"
