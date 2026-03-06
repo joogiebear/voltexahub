@@ -26,22 +26,17 @@ RUN apk add --no-cache \
     libexif-dev \
     exiftool
 
-# PHP extensions
+# PHP extensions (tokenizer, ctype, fileinfo, opcache, posix are bundled in PHP 8.4-FPM)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
         bcmath \
         mbstring \
-        tokenizer \
         xml \
-        ctype \
-        fileinfo \
         gd \
         zip \
         pcntl \
-        posix \
         intl \
-        opcache \
         exif
 
 # OPcache tuning
