@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\PerkService;
+use App\Services\PlanService;
 use App\Services\PluginManager;
 use App\Services\TextFormatterService;
 use Illuminate\Support\Facades\Config;
@@ -13,6 +14,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(PerkService::class);
+        $this->app->singleton(PlanService::class);
         $this->app->singleton(PluginManager::class);
         $this->app->singleton(TextFormatterService::class);
     }

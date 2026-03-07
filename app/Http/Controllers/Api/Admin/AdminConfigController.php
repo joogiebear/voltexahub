@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ForumConfig;
+use App\Services\PlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,19 @@ class AdminConfigController extends Controller
             'config' => ['required', 'array'],
             'config.*' => ['nullable'],
         ]);
+
+        // Block custom theme changes if plan doesn't allow it
+        $themeKeys = ['custom_css', 'custom_js'];
+        if (! app(PlanService::class)->customThemes()) {
+            foreach ($themeKeys as $key) {
+                if (array_key_exists($key, $validated['config']) && ! empty($validated['config'][$key])) {
+                    return response()->json([
+                        'error'       => 'custom_themes_not_available',
+                        'upgrade_url' => 'https://billing.voltexahub.com',
+                    ], 403);
+                }
+            }
+        }
 
         foreach ($validated['config'] as $key => $value) {
             ForumConfig::set($key, is_bool($value) ? ($value ? 'true' : 'false') : (string)($value ?? ''));

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Forum;
 use App\Models\Game;
+use App\Services\PlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -170,6 +171,17 @@ class AdminForumController extends Controller
 
     public function createForum(Request $request): JsonResponse
     {
+        $plan = app(PlanService::class);
+        $max = $plan->maxForums();
+
+        if ($max > 0 && Forum::count() >= $max) {
+            return response()->json([
+                'error'       => 'forum_limit_reached',
+                'limit'       => $max,
+                'upgrade_url' => 'https://billing.voltexahub.com',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'category_id' => ['required', 'exists:categories,id'],
             'parent_forum_id' => ['nullable', 'exists:forums,id'],

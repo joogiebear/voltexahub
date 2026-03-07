@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\ForumController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\PublicConfigController;
 use App\Http\Controllers\Api\PostbitBgController;
 use App\Http\Controllers\Api\PostController;
@@ -77,6 +78,7 @@ Route::get('/leaderboard', [LeaderboardController::class, 'index']);
 Route::get('/thread-prefixes', [ThreadPrefixController::class, 'index']);
 Route::get('/tags', [TagController::class, 'index']);
 Route::get('/tags/{slug}/threads', [TagController::class, 'threads']);
+Route::get('/plan', [PlanController::class, 'index']);
 
 // Auth routes
 Route::post('/auth/register', [AuthController::class, 'register']);

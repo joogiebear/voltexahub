@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\PlanService;
 use App\Services\PluginManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,13 @@ class AdminPluginController extends Controller
      */
     public function install(Request $request): JsonResponse
     {
+        if (! app(PlanService::class)->pluginsEnabled()) {
+            return response()->json([
+                'error'       => 'plugins_not_available',
+                'upgrade_url' => 'https://billing.voltexahub.com',
+            ], 403);
+        }
+
         $request->validate([
             'slug' => 'required|string|max:255',
         ]);

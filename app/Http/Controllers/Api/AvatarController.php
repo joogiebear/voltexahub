@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\ImageUploadService;
+use App\Services\PlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -13,9 +14,20 @@ class AvatarController extends Controller
     // Recommended: 200×200 px, displayed at 48–96 px
     public function store(Request $request, ImageUploadService $imageService): JsonResponse
     {
+        $plan = app(PlanService::class);
+        $maxMb = $plan->maxUploadMb();
+        $maxKb = $maxMb > 0 ? $maxMb * 1024 : 10240;
+
         $request->validate([
-            'avatar' => ['required', 'file', 'max:10240'],
+            'avatar' => ['required', 'file', "max:{$maxKb}"],
         ]);
+
+        if ($maxMb > 0 && $request->file('avatar')->getSize() > $maxMb * 1024 * 1024) {
+            return response()->json([
+                'error'    => 'upload_limit_exceeded',
+                'limit_mb' => $maxMb,
+            ], 413);
+        }
 
         $user = $request->user();
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\WelcomeEmail;
 use App\Models\User;
+use App\Services\PlanService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,17 @@ class AuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {
+        $plan = app(PlanService::class);
+        $max = $plan->maxMembers();
+
+        if ($max > 0 && User::count() >= $max) {
+            return response()->json([
+                'error'       => 'member_limit_reached',
+                'limit'       => $max,
+                'upgrade_url' => 'https://billing.voltexahub.com',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'username' => ['required', 'string', 'max:255', 'unique:users', 'alpha_dash'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
